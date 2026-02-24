@@ -1,3 +1,7 @@
+/* ============================= */
+/* STUDENT STATE */
+/* ============================= */
+
 let studentState = {
   mastery: {
     Binomial: 70,
@@ -9,6 +13,10 @@ let studentState = {
   risk: 40
 }
 
+/* ============================= */
+/* CONCEPT DEPENDENCY GRAPH */
+/* ============================= */
+
 const conceptGraph = {
   Conditional: ["Bayes"],
   Bayes: [],
@@ -16,6 +24,20 @@ const conceptGraph = {
   Normal: [],
   Poisson: []
 }
+
+/* ============================= */
+/* MOMENTUM TRACKING */
+/* ============================= */
+
+let masteryMomentum = {}
+
+Object.keys(studentState.mastery).forEach(concept => {
+  masteryMomentum[concept] = 0
+})
+
+/* ============================= */
+/* STATE GETTERS / SETTERS */
+/* ============================= */
 
 export function getStudentState() {
   return studentState
@@ -27,6 +49,10 @@ export function updateStudentState(newState) {
     ...newState
   }
 }
+
+/* ============================= */
+/* COGNITIVE MASTERY ENGINE */
+/* ============================= */
 
 export function updateCognitiveMastery(concept, correct, signal) {
   const current = studentState.mastery[concept]
@@ -41,13 +67,15 @@ export function updateCognitiveMastery(concept, correct, signal) {
     studentState.mastery[concept] = Math.max(10, current + delta)
   }
 
-  // Dependency propagation
+  // Track momentum
+  masteryMomentum[concept] = delta
+
+  /* 🔥 Dependency propagation */
   const relatedConcepts = conceptGraph[concept] || []
 
   relatedConcepts.forEach(related => {
     const relatedCurrent = studentState.mastery[related]
 
-    // Apply smaller ripple effect (30% of delta)
     const propagatedChange = delta * 0.3
 
     studentState.mastery[related] = Math.max(
@@ -55,4 +83,35 @@ export function updateCognitiveMastery(concept, correct, signal) {
       Math.min(100, relatedCurrent + propagatedChange)
     )
   })
+}
+
+/* ============================= */
+/* ADVANCED RISK ENGINE */
+/* ============================= */
+
+export function calculateRisk() {
+  const masteryValues = Object.values(studentState.mastery)
+
+  const weakest = Math.min(...masteryValues)
+
+  const avg =
+    masteryValues.reduce((a, b) => a + b, 0) / masteryValues.length
+
+  const variance =
+    masteryValues.reduce(
+      (sum, val) => sum + Math.pow(val - avg, 2),
+      0
+    ) / masteryValues.length
+
+  const volatility =
+    Object.values(masteryMomentum)
+      .filter(v => v < 0)
+      .reduce((sum, v) => sum + Math.abs(v), 0)
+
+  const riskScore =
+    0.4 * (100 - weakest) +
+    0.3 * variance +
+    0.3 * volatility
+
+  return Math.min(100, Math.max(5, riskScore))
 }

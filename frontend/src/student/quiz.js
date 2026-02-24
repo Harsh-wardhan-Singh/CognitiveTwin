@@ -1,7 +1,8 @@
 import {
   getStudentState,
   updateStudentState,
-  updateCognitiveMastery
+  updateCognitiveMastery,
+  calculateRisk
 } from '../services/state.js'
 import { renderDashboard } from './dashboard.js'
 import '../styles/dashboard.css'
@@ -154,15 +155,19 @@ function initializeInteractions(questionObj) {
   const submitBtn = document.querySelector('.submit-btn')
   const confidenceButtons = document.querySelectorAll('.confidence-btn')
 
-  let selected = null
+  let selectedAnswer = null
   selectedConfidence = null
+
+  function updateSubmitState() {
+    submitBtn.disabled = !(selectedAnswer && selectedConfidence)
+  }
 
   options.forEach(btn => {
     btn.addEventListener('click', () => {
       options.forEach(b => b.classList.remove('selected'))
       btn.classList.add('selected')
-      selected = btn.textContent
-      submitBtn.disabled = false
+      selectedAnswer = btn.textContent
+      updateSubmitState()
     })
   })
 
@@ -171,11 +176,13 @@ function initializeInteractions(questionObj) {
       confidenceButtons.forEach(b => b.classList.remove('active'))
       btn.classList.add('active')
       selectedConfidence = parseFloat(btn.dataset.value)
+      updateSubmitState()
     })
   })
 
   submitBtn.addEventListener('click', () => {
-    evaluateAnswer(selected, questionObj.correct)
+    if (!selectedAnswer || !selectedConfidence) return
+    evaluateAnswer(selectedAnswer, questionObj.correct)
   })
 }
 
@@ -233,7 +240,7 @@ function showResults() {
   // Extract mastery values
   const masteryValues = Object.values(state.mastery)
 
-  // Compute average mastery (for display only)
+  // Compute average mastery
   const averageMastery =
     masteryValues.reduce((sum, val) => sum + val, 0) / masteryValues.length
 
@@ -242,10 +249,9 @@ function showResults() {
     .sort((a, b) => a[1] - b[1])[0]
 
   const weakestConcept = weakestEntry[0]
-  const weakestScore = weakestEntry[1]
 
-  // Risk is based on weakest concept (diagnostic model)
-  const recalculatedRisk = Math.max(5, 100 - weakestScore)
+  // 🔥 Use advanced risk engine
+  const recalculatedRisk = calculateRisk()
 
   // Update global state
   updateStudentState({
@@ -254,12 +260,19 @@ function showResults() {
 
   quizCard.innerHTML = `
     <div class="question-text">Diagnostic Complete</div>
+
     <div style="margin-bottom:10px;">
       Average Mastery: ${Math.round(averageMastery)}%
     </div>
-    <div style="margin-bottom:20px;">
+
+    <div style="margin-bottom:10px;">
       Weakest Concept: <strong>${weakestConcept}</strong>
     </div>
+
+    <div style="margin-bottom:20px;">
+      Cognitive Risk Score: <strong>${Math.round(recalculatedRisk)}%</strong>
+    </div>
+
     <button class="submit-btn" id="dashboardBtn">
       View Updated Dashboard
     </button>

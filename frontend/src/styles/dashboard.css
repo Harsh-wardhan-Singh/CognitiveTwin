@@ -289,3 +289,7 @@
   font-weight: 600;
   box-shadow: 0 0 10px rgba(0,245,255,0.6);
 }
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
