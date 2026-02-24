@@ -4,6 +4,10 @@ import { getStudentState } from '../services/state.js'
 
 export function renderDashboard() {
   const app = document.getElementById('app')
+  const data = getStudentState()
+
+  const weakestConcept = Object.entries(data.mastery)
+    .sort((a, b) => a[1] - b[1])[0][0]
 
   app.innerHTML = `
     <div class="background-glow"></div>
@@ -20,6 +24,11 @@ export function renderDashboard() {
         <div class="card">
           <h2>Risk Prediction</h2>
           <div id="riskContainer"></div>
+
+          <div class="weakest-indicator">
+            Weakest Concept: 
+            <span id="weakestConcept">${weakestConcept}</span>
+          </div>
         </div>
 
         <div class="card full-width">
@@ -32,24 +41,20 @@ export function renderDashboard() {
     </div>
   `
 
-  initializeDashboard()
+  initializeDashboard(data)
 }
 
-function initializeDashboard() {
-  const data = getStudentState()
-
-  // SAFETY CHECKS
-  const chartCanvas = document.getElementById('masteryChart')
-  const riskContainer = document.getElementById('riskContainer')
-
-  if (!chartCanvas || !riskContainer) {
-    console.error("Dashboard elements not found.")
-    return
-  }
-
+function initializeDashboard(data) {
   createMasteryChart('masteryChart')
   createRiskRing('riskContainer', 0)
 
-  updateMasteryChart(data.mastery)
+  updateMasteryChart([
+    data.mastery.Binomial,
+    data.mastery.Poisson,
+    data.mastery.Normal,
+    data.mastery.Bayes,
+    data.mastery.Conditional
+  ])
+
   updateRiskRing(Math.round(data.risk))
 }
