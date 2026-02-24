@@ -1,0 +1,19 @@
+FEATURE_ORDER = [
+    "avg_mastery",
+    "mastery_variance",
+    "low_mastery_ratio",
+    "depth_weighted_mastery",
+    "avg_confidence",
+    "confidence_reliability",
+    "overconfidence_score",
+    "recent_accuracy_trend",
+    "decay_vulnerability",
+    "avg_time",
+    "retry_rate",
+    "avg_retry_count",
+    "high_influence_low_mastery_count",
+    "avg_influence",
+    "graph_density",
+    "bottleneck_risk_score",
+    "depth_weighted_weakness"
+]
