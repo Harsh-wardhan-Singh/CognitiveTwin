@@ -35,8 +35,8 @@ ENV/
 # Environment Variables
 # =========================
 backend/.env
-.env.*
-!.env.example
+.env.
+
 
 # =========================
 # Database
