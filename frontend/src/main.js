@@ -1,11 +1,5 @@
 import './styles/global.css'
+import './styles/dashboard.css'
+import { renderQuiz } from './student/quiz.js'
 
-const app = document.getElementById('app')
-
-app.innerHTML = `
-  <div class="background-glow"></div>
-  <div style="padding:40px">
-    <h1>Cognitive Twin</h1>
-    <p>Frontend initialized successfully.</p>
-  </div>
-`
+renderQuiz()
