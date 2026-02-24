@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.schemas.user_schema import UserRegister, UserLogin
@@ -13,5 +13,16 @@ def register(data: UserRegister, db: Session = Depends(get_db)):
 
 
 @router.post("/login")
-def login(data: UserLogin, db: Session = Depends(get_db)):
-    return login_user(db, data.email, data.password)
+def login(data: UserLogin, response: Response, db: Session = Depends(get_db)):
+
+    token = login_user(db, data.email, data.password)
+
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        secure=False,      # True in production (HTTPS)
+        samesite="lax"
+    )
+
+    return {"message": "Login successful"}
