@@ -34,7 +34,7 @@ ENV/
 # =========================
 # Environment Variables
 # =========================
-backend\.env
+backend/.env
 .env.*
 !.env.example
 
