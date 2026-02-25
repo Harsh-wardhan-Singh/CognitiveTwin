@@ -57,3 +57,13 @@
   min-width: 200px;
   backdrop-filter: blur(6px);
 }
+.unstable-row {
+  border: 2px solid #ff4444;
+  border-radius: 8px;
+  animation: pulse 1.5s infinite alternate;
+}
+
+@keyframes pulse {
+  from { box-shadow: 0 0 5px #ff4444; }
+  to { box-shadow: 0 0 15px #ff0000; }
+}

@@ -237,23 +237,25 @@ function showResults() {
   const quizCard = document.getElementById('quizCard')
   const state = getStudentState()
 
-  // Extract mastery values
-  const masteryValues = Object.values(state.mastery)
+  // Extract mastery values correctly
+  const masteryValues =
+    Object.values(state.mastery)
+      .map(m => m.value)
 
   // Compute average mastery
   const averageMastery =
-    masteryValues.reduce((sum, val) => sum + val, 0) / masteryValues.length
+    masteryValues.reduce((sum, val) => sum + val, 0) /
+    masteryValues.length
 
-  // Determine weakest concept
-  const weakestEntry = Object.entries(state.mastery)
-    .sort((a, b) => a[1] - b[1])[0]
+  // Determine weakest concept properly
+  const weakestEntry =
+    Object.entries(state.mastery)
+      .sort((a, b) => a[1].value - b[1].value)[0]
 
   const weakestConcept = weakestEntry[0]
 
-  // 🔥 Use advanced risk engine
   const recalculatedRisk = calculateRisk()
 
-  // Update global state
   updateStudentState({
     risk: recalculatedRisk
   })
@@ -278,7 +280,6 @@ function showResults() {
     </button>
   `
 
-  document.getElementById('dashboardBtn').addEventListener('click', () => {
-    renderDashboard()
-  })
+  document.getElementById('dashboardBtn')
+    .addEventListener('click', renderDashboard)
 }

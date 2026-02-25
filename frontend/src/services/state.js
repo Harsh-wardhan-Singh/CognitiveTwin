@@ -4,11 +4,11 @@
 
 let studentState = {
   mastery: {
-    Binomial: 70,
-    Poisson: 65,
-    Normal: 72,
-    Bayes: 60,
-    Conditional: 75
+    Binomial: { value: 70, lastUpdated: Date.now() },
+    Poisson: { value: 65, lastUpdated: Date.now() },
+    Normal: { value: 72, lastUpdated: Date.now() },
+    Bayes: { value: 60, lastUpdated: Date.now() },
+    Conditional: { value: 75, lastUpdated: Date.now() }
   },
   risk: 40
 }
@@ -55,33 +55,38 @@ export function updateStudentState(newState) {
 /* ============================= */
 
 export function updateCognitiveMastery(concept, correct, signal) {
-  const current = studentState.mastery[concept]
+  const current = studentState.mastery[concept].value
 
   let delta
 
   if (correct) {
     delta = 10 * signal
-    studentState.mastery[concept] = Math.min(100, current + delta)
+    studentState.mastery[concept].value =
+      Math.min(100, current + delta)
   } else {
     delta = -12 * signal
-    studentState.mastery[concept] = Math.max(10, current + delta)
+    studentState.mastery[concept].value =
+      Math.max(10, current + delta)
   }
 
-  // Track momentum
+  studentState.mastery[concept].lastUpdated = Date.now()
+
   masteryMomentum[concept] = delta
 
-  /* 🔥 Dependency propagation */
   const relatedConcepts = conceptGraph[concept] || []
 
   relatedConcepts.forEach(related => {
-    const relatedCurrent = studentState.mastery[related]
+    const relatedCurrent =
+      studentState.mastery[related].value
 
     const propagatedChange = delta * 0.3
 
-    studentState.mastery[related] = Math.max(
+    studentState.mastery[related].value = Math.max(
       10,
       Math.min(100, relatedCurrent + propagatedChange)
     )
+
+    studentState.mastery[related].lastUpdated = Date.now()
   })
 }
 
@@ -90,12 +95,15 @@ export function updateCognitiveMastery(concept, correct, signal) {
 /* ============================= */
 
 export function calculateRisk() {
-  const masteryValues = Object.values(studentState.mastery)
+  const masteryValues =
+    Object.values(studentState.mastery)
+      .map(m => m.value)
 
   const weakest = Math.min(...masteryValues)
 
   const avg =
-    masteryValues.reduce((a, b) => a + b, 0) / masteryValues.length
+    masteryValues.reduce((a, b) => a + b, 0) /
+    masteryValues.length
 
   const variance =
     masteryValues.reduce(
@@ -114,4 +122,30 @@ export function calculateRisk() {
     0.3 * volatility
 
   return Math.min(100, Math.max(5, riskScore))
+}
+
+/* ============================= */
+/* RETENTION DECAY */
+/* ============================= */
+
+export function applyRetentionDecay() {
+  const now = Date.now()
+
+  Object.keys(studentState.mastery).forEach(concept => {
+    const conceptData = studentState.mastery[concept]
+
+    const hoursPassed =
+      (now - conceptData.lastUpdated) / (1000 * 60 * 60)
+
+    if (hoursPassed <= 0) return
+
+    const decayRate = 0.5  // % per hour (tunable)
+
+    const decayAmount = hoursPassed * decayRate
+
+    conceptData.value =
+      Math.max(10, conceptData.value - decayAmount)
+
+    conceptData.lastUpdated = now
+  })
 }
