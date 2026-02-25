@@ -4,8 +4,10 @@ import {
   updateCognitiveMastery,
   calculateRisk
 } from '../services/state.js'
-import { renderDashboard } from './dashboard.js'
+
 import '../styles/dashboard.css'
+import { currentUser } from '../testApp.js'
+import { renderStudentDashboard } from '../views/studentDashboardView.js'
 
 /* ============================= */
 /* DIAGNOSTIC TRACKING */
@@ -70,7 +72,6 @@ const questionBank = {
 
 export function renderQuiz() {
   const app = document.getElementById('app')
-
   const state = getStudentState()
 
   conceptQueue = Object.keys(state.mastery)
@@ -96,7 +97,6 @@ export function renderQuiz() {
 /* ============================= */
 
 function loadNextConcept() {
-  // If all concepts mastered at least once → finish
   const allDone = Object.values(conceptStatus).every(v => v === true)
 
   if (allDone) {
@@ -104,9 +104,7 @@ function loadNextConcept() {
     return
   }
 
-  // Pick next unfinished concept
   currentConcept = conceptQueue.find(c => conceptStatus[c] !== true)
-
   loadQuestionForConcept(currentConcept)
 }
 
@@ -116,32 +114,25 @@ function loadQuestionForConcept(concept) {
   questionStartTime = Date.now()
 
   quizCard.innerHTML = `
-  <div class="question-text">${question.question}</div>
+    <div class="question-text">${question.question}</div>
 
-  <div class="options">
-    ${question.options.map(opt => `<button class="option-btn">${opt}</button>`).join('')}
-  </div>
+    <div class="options">
+      ${question.options.map(opt =>
+        `<button class="option-btn">${opt}</button>`
+      ).join('')}
+    </div>
 
-  <div class="confidence-section">
-  <p class="confidence-label">How confident are you?</p>
+    <div class="confidence-section">
+      <p class="confidence-label">How confident are you?</p>
+      <div class="confidence-options">
+        <button class="confidence-btn" data-value="0.5">Guessing</button>
+        <button class="confidence-btn" data-value="0.8">Somewhat Confident</button>
+        <button class="confidence-btn" data-value="1.2">Very Confident</button>
+      </div>
+    </div>
 
-  <div class="confidence-options">
-    <button class="confidence-btn" data-value="0.5">
-      Guessing
-    </button>
-
-    <button class="confidence-btn" data-value="0.8">
-      Somewhat Confident
-    </button>
-
-    <button class="confidence-btn" data-value="1.2">
-      Very Confident
-    </button>
-  </div>
-</div>
-
-  <button class="submit-btn" disabled>Submit Answer</button>
-`
+    <button class="submit-btn" disabled>Submit Answer</button>
+  `
 
   initializeInteractions(question)
 }
@@ -205,28 +196,19 @@ function evaluateAnswer(answer, correctAnswer) {
 
   const correct = answer === correctAnswer
 
-  // Calculate response time in seconds
   const responseTime = (Date.now() - questionStartTime) / 1000
-
-  // Speed weight (faster = higher)
   const speedWeight = Math.max(0.5, 2 - responseTime / 5)
-
-  // Confidence weight (default medium if none selected)
   const confidenceWeight =
-  typeof selectedConfidence === 'number'
-    ? selectedConfidence
-    : 0.8
+    typeof selectedConfidence === 'number'
+      ? selectedConfidence
+      : 0.8
 
-  // Final signal strength
   const signalStrength = speedWeight * confidenceWeight
 
   updateCognitiveMastery(currentConcept, correct, signalStrength)
-
   conceptStatus[currentConcept] = true
 
-  setTimeout(() => {
-    loadNextConcept()
-  }, 900)
+  setTimeout(loadNextConcept, 900)
 }
 
 /* ============================= */
@@ -234,25 +216,7 @@ function evaluateAnswer(answer, correctAnswer) {
 /* ============================= */
 
 function showResults() {
-  const quizCard = document.getElementById('quizCard')
   const state = getStudentState()
-
-  // Extract mastery values correctly
-  const masteryValues =
-    Object.values(state.mastery)
-      .map(m => m.value)
-
-  // Compute average mastery
-  const averageMastery =
-    masteryValues.reduce((sum, val) => sum + val, 0) /
-    masteryValues.length
-
-  // Determine weakest concept properly
-  const weakestEntry =
-    Object.entries(state.mastery)
-      .sort((a, b) => a[1].value - b[1].value)[0]
-
-  const weakestConcept = weakestEntry[0]
 
   const recalculatedRisk = calculateRisk()
 
@@ -260,26 +224,10 @@ function showResults() {
     risk: recalculatedRisk
   })
 
-  quizCard.innerHTML = `
-    <div class="question-text">Diagnostic Complete</div>
+  // Save updated state to session
+  currentUser.hasTakenQuiz = true
+  currentUser.data = getStudentState()
 
-    <div style="margin-bottom:10px;">
-      Average Mastery: ${Math.round(averageMastery)}%
-    </div>
-
-    <div style="margin-bottom:10px;">
-      Weakest Concept: <strong>${weakestConcept}</strong>
-    </div>
-
-    <div style="margin-bottom:20px;">
-      Cognitive Risk Score: <strong>${Math.round(recalculatedRisk)}%</strong>
-    </div>
-
-    <button class="submit-btn" id="dashboardBtn">
-      View Updated Dashboard
-    </button>
-  `
-
-  document.getElementById('dashboardBtn')
-    .addEventListener('click', renderDashboard)
+  // Directly render dashboard (acts as results screen)
+  renderStudentDashboard(currentUser.data)
 }
