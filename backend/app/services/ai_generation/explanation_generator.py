@@ -1,4 +1,15 @@
-from .llm_client import LLMClient
+import time
+import json
+from .llm_client import LLMClient, LLMTransportError
+from .schema_validator import validate_explanation
+
+
+MAX_RETRIES = 3
+RETRY_DELAY = 1.5
+
+
+class ExplanationGenerationError(Exception):
+    pass
 
 
 class ExplanationGenerator:
@@ -47,4 +58,26 @@ Return JSON:
 }}
 """
 
-        return self.llm.generate_json(system_prompt, user_prompt)
+        last_error = None
+
+        for attempt in range(MAX_RETRIES):
+            try:
+                raw = self.llm.generate_json(system_prompt, user_prompt)
+
+                parsed = json.loads(raw)
+                return validate_explanation(parsed)
+
+            except LLMTransportError:
+                raise
+
+            except (json.JSONDecodeError, ValueError) as e:
+                last_error = e
+
+                if attempt < MAX_RETRIES - 1:
+                    time.sleep(RETRY_DELAY)
+                else:
+                    break
+
+        raise ExplanationGenerationError(
+            f"Explanation generation failed after {MAX_RETRIES} attempts: {last_error}"
+        )

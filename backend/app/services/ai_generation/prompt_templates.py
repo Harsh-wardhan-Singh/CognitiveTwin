@@ -1,13 +1,21 @@
 def build_question_prompt(topic, difficulty, num_questions):
 
     return f"""
-Generate {num_questions} unique probability MCQs.
+You are a probability exam question generator.
 
+Generate exactly {num_questions} MCQs.
 Topic: {topic}
 Difficulty: {difficulty}
-Audience: High school to early college
+Audience: High school to early college.
 
-Return JSON in this EXACT format:
+IMPORTANT:
+- Output MUST be valid JSON.
+- Do NOT include explanations outside JSON.
+- Do NOT include markdown.
+- Do NOT include commentary.
+- Start with {{ and end with }}.
+
+JSON FORMAT:
 
 {{
   "questions": [
@@ -23,10 +31,10 @@ Return JSON in this EXACT format:
         {{
           "id": "A",
           "text": "string",
-          "is_correct": true|false
+          "is_correct": true
         }}
       ],
-      "base_explanation": "Short conceptual explanation (2-4 lines)"
+      "base_explanation": "2-4 line explanation"
     }}
   ]
 }}
@@ -37,4 +45,6 @@ Rules:
 - Mix single and multiple answer questions
 - Avoid repeated numbers
 - Keep questions concise
+
+Return ONLY JSON.
 """
