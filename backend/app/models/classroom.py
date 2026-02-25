@@ -12,7 +12,7 @@ class Classroom(Base):
     name = Column(String, nullable=False)
     subject = Column(String, nullable=False)
 
-    teacher_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    teacher_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
 
     syllabus_scope = Column(JSON, nullable=True)
     exam_pattern = Column(JSON, nullable=True)
