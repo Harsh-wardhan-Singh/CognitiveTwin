@@ -1,0 +1,46 @@
+.teacher-container {
+  padding: 40px;
+  color: white;
+}
+
+.teacher-title {
+  margin-bottom: 30px;
+}
+
+.heatmap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.heatmap-row {
+  display: flex;
+  gap: 6px;
+}
+
+.heatmap-cell {
+  padding: 8px 12px;
+  border-radius: 6px;
+  min-width: 80px;
+  text-align: center;
+  font-size: 13px;
+}
+
+.header .heatmap-cell {
+  background: rgba(255,255,255,0.1);
+  font-weight: 600;
+}
+
+.student-id {
+  background: rgba(255,255,255,0.1);
+}
+
+.mastery {
+  color: black;
+  font-weight: 600;
+}
+
+.risk {
+  color: black;
+  font-weight: 600;
+}

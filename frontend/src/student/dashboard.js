@@ -1,7 +1,7 @@
 import { createMasteryChart, updateMasteryChart } from '../components/charts/masteryChart.js'
 import { createRiskRing, updateRiskRing } from '../components/indicators/riskRing.js'
 import { getStudentState } from '../services/state.js'
-
+import { renderTeacherDashboard } from '../teacher/teacherDashboard.js'
 export function renderDashboard() {
   const app = document.getElementById('app')
   const data = getStudentState()
@@ -15,6 +15,9 @@ export function renderDashboard() {
     <div class="dashboard-container">
       <h1 class="dashboard-title">Student Cognitive Dashboard</h1>
 
+      <button id="teacherBtn" class="submit-btn" style="margin-bottom:20px;">
+  Switch to Teacher View
+</button>
       <div class="dashboard-grid">
         <div class="card">
           <h2>Concept Mastery</h2>
@@ -42,6 +45,8 @@ export function renderDashboard() {
   `
 
   initializeDashboard(data)
+  document.getElementById('teacherBtn')
+  .addEventListener('click', renderTeacherDashboard)
 }
 
 function initializeDashboard(data) {
