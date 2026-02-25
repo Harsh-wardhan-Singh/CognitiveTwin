@@ -78,7 +78,7 @@ function renderInsights(classData) {
     Object.entries(conceptCounts)
       .sort((a, b) => b[1] - a[1])[0][0]
 
-  // ✅ DECLARE BEFORE USE
+  // DECLARE BEFORE USE
   const unstableStudents = classData.filter(student => {
     const values = Object.values(student.mastery)
     const max = Math.max(...values)
