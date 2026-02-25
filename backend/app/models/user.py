@@ -1,7 +1,13 @@
+<<<<<<< HEAD
 from sqlalchemy import Column, Integer, String, Enum, DateTime , Boolean
 from datetime import datetime , timezone
 import enum
 from app.db.base import Base
+=======
+from sqlalchemy import Column, Integer, String, Enum
+from app.db.base import Base
+import enum
+>>>>>>> ac742c16d7a13110cd3c5d73e6ad6f243f888f96
 
 
 class RoleEnum(str, enum.Enum):
@@ -13,9 +19,15 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
+<<<<<<< HEAD
     email = Column(String, unique=True, nullable=False, index=True)
     password_hash = Column(String, nullable=False)
     role = Column(Enum(RoleEnum), nullable=False)
     full_name = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+=======
+    email = Column(String, unique=True, index=True)
+    password_hash = Column(String, nullable=False)
+    role = Column(Enum(RoleEnum), nullable=False)
+>>>>>>> ac742c16d7a13110cd3c5d73e6ad6f243f888f96
