@@ -9,18 +9,22 @@ export function renderTeacherDashboard() {
   const classData = generateClassData(baseMastery, 20)
 
   app.innerHTML = `
-  <div class="teacher-container">
-    <h1 class="teacher-title">Class Cognitive Overview</h1>
+    <div class="teacher-container">
+      <h1 class="teacher-title">Class Cognitive Overview</h1>
 
-    <div class="teacher-insights" id="teacherInsights"></div>
+      <div class="teacher-insights" id="teacherInsights"></div>
 
-    <div id="heatmap" class="heatmap"></div>
-  </div>
-`
+      <div id="heatmap" class="heatmap"></div>
+    </div>
+  `
 
   renderHeatmap(classData)
   renderInsights(classData)
 }
+
+/* ============================= */
+/* HEATMAP */
+/* ============================= */
 
 function renderHeatmap(classData) {
   const heatmap = document.getElementById('heatmap')
@@ -36,15 +40,25 @@ function renderHeatmap(classData) {
   `
 
   classData.forEach(student => {
+    const values =
+      Object.values(student.mastery).map(m => m.value)
+
+    const max = Math.max(...values)
+    const min = Math.min(...values)
+
+    const isUnstable = (max - min) > 25
+
     html += `
-      <div class="heatmap-row">
+      <div class="heatmap-row ${isUnstable ? 'unstable-row' : ''}">
         <div class="heatmap-cell student-id">${student.id}</div>
+
         ${concepts.map(c => `
           <div class="heatmap-cell mastery"
-            style="background-color: ${getColor(student.mastery[c])}">
-            ${Math.round(student.mastery[c])}
+            style="background-color: ${getColor(student.mastery[c].value)}">
+            ${Math.round(student.mastery[c].value)}
           </div>
         `).join('')}
+
         <div class="heatmap-cell risk"
           style="background-color: ${getRiskColor(student.risk)}">
           ${Math.round(student.risk)}
@@ -55,6 +69,10 @@ function renderHeatmap(classData) {
 
   heatmap.innerHTML = html
 }
+
+/* ============================= */
+/* INSIGHTS */
+/* ============================= */
 
 function renderInsights(classData) {
   const container = document.getElementById('teacherInsights')
@@ -68,22 +86,26 @@ function renderInsights(classData) {
   const conceptCounts = {}
 
   classData.forEach(student => {
-    const weakest = Object.entries(student.mastery)
-      .sort((a, b) => a[1] - b[1])[0][0]
+    const weakest =
+      Object.entries(student.mastery)
+        .sort((a, b) => a[1].value - b[1].value)[0][0]
 
-    conceptCounts[weakest] = (conceptCounts[weakest] || 0) + 1
+    conceptCounts[weakest] =
+      (conceptCounts[weakest] || 0) + 1
   })
 
   const mostProblematicConcept =
     Object.entries(conceptCounts)
       .sort((a, b) => b[1] - a[1])[0][0]
 
-  // DECLARE BEFORE USE
   const unstableStudents = classData.filter(student => {
-    const values = Object.values(student.mastery)
+    const values =
+      Object.values(student.mastery).map(m => m.value)
+
     const max = Math.max(...values)
     const min = Math.min(...values)
-    return (max - min) > 40
+
+    return (max - min) > 25
   }).length
 
   container.innerHTML = `
@@ -110,6 +132,10 @@ function renderInsights(classData) {
     </div>
   `
 }
+
+/* ============================= */
+/* COLOR HELPERS */
+/* ============================= */
 
 function getColor(value) {
   const red = Math.round(255 - (value * 2.5))

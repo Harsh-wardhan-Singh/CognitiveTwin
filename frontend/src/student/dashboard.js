@@ -2,12 +2,15 @@ import { createMasteryChart, updateMasteryChart } from '../components/charts/mas
 import { createRiskRing, updateRiskRing } from '../components/indicators/riskRing.js'
 import { getStudentState } from '../services/state.js'
 import { renderTeacherDashboard } from '../teacher/teacherDashboard.js'
+
 export function renderDashboard() {
   const app = document.getElementById('app')
   const data = getStudentState()
 
-  const weakestConcept = Object.entries(data.mastery)
-    .sort((a, b) => a[1] - b[1])[0][0]
+  // Fix weakest concept logic
+  const weakestConcept =
+    Object.entries(data.mastery)
+      .sort((a, b) => a[1].value - b[1].value)[0][0]
 
   app.innerHTML = `
     <div class="background-glow"></div>
@@ -16,8 +19,9 @@ export function renderDashboard() {
       <h1 class="dashboard-title">Student Cognitive Dashboard</h1>
 
       <button id="teacherBtn" class="submit-btn" style="margin-bottom:20px;">
-  Switch to Teacher View
-</button>
+        Switch to Teacher View
+      </button>
+
       <div class="dashboard-grid">
         <div class="card">
           <h2>Concept Mastery</h2>
@@ -45,20 +49,23 @@ export function renderDashboard() {
   `
 
   initializeDashboard(data)
-  document.getElementById('teacherBtn')
-  .addEventListener('click', renderTeacherDashboard)
+
+  document
+    .getElementById('teacherBtn')
+    .addEventListener('click', renderTeacherDashboard)
 }
 
 function initializeDashboard(data) {
   createMasteryChart('masteryChart')
   createRiskRing('riskContainer', 0)
 
+  // Extract numeric mastery values correctly
   updateMasteryChart([
-    data.mastery.Binomial,
-    data.mastery.Poisson,
-    data.mastery.Normal,
-    data.mastery.Bayes,
-    data.mastery.Conditional
+    data.mastery.Binomial.value,
+    data.mastery.Poisson.value,
+    data.mastery.Normal.value,
+    data.mastery.Bayes.value,
+    data.mastery.Conditional.value
   ])
 
   updateRiskRing(Math.round(data.risk))

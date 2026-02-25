@@ -1,22 +1,24 @@
-import { calculateRisk } from '../services/state.js'
-
-const baseConcepts = [
-  "Binomial",
-  "Poisson",
-  "Normal",
-  "Bayes",
-  "Conditional"
-]
+/* ============================= */
+/* CLASS DATA GENERATION */
+/* ============================= */
 
 function randomizeMastery(baseMastery) {
   const clone = {}
 
   Object.keys(baseMastery).forEach(concept => {
+    const baseValue = baseMastery[concept].value
+
     const noise = (Math.random() - 0.5) * 30
-    clone[concept] = Math.max(
+
+    const newValue = Math.max(
       10,
-      Math.min(100, baseMastery[concept] + noise)
+      Math.min(100, baseValue + noise)
     )
+
+    clone[concept] = {
+      value: newValue,
+      lastUpdated: Date.now()
+    }
   })
 
   return clone
@@ -40,8 +42,13 @@ export function generateClassData(baseMastery, size = 20) {
   return classData
 }
 
+/* ============================= */
+/* RISK FROM ARBITRARY MASTERY */
+/* ============================= */
+
 function calculateRiskFromMastery(mastery) {
-  const values = Object.values(mastery)
+  const values =
+    Object.values(mastery).map(m => m.value)
 
   const weakest = Math.min(...values)
 
