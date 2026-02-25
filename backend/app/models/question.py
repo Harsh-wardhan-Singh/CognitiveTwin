@@ -1,13 +1,12 @@
-from sqlalchemy import Column, Integer, String, JSON
+from sqlalchemy import Column, Integer, String, Text
 from app.db.base import Base
-
 
 class Question(Base):
     __tablename__ = "questions"
 
     id = Column(Integer, primary_key=True, index=True)
-
-    concept_tag = Column(String, index=True)
-    question_text = Column(String, nullable=False)
-
-    metadata_json = Column(JSON, nullable=True)
+    topic = Column(String, index=True)
+    concept = Column(String, index=True)
+    difficulty = Column(Integer)
+    question_text = Column(Text, unique=True)
+    correct_answer = Column(String)
