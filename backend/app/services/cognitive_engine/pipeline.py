@@ -12,6 +12,7 @@ from risk_engine.predictor import RiskPredictor
 from analytics.class_risk_aggregator import ClassRiskAggregator
 from analytics.heatmap_builder import HeatmapBuilder
 from analytics.insight_generator import InsightGenerator
+from app.services.cognitive_engine.bkt_config import CONCEPT_PARAMS
 
 
 class CognitivePipeline:
@@ -34,7 +35,7 @@ class CognitivePipeline:
         risk_model_path: str,
         training_data_store: list  # in-memory for now (replace with DB later)
     ):
-        self.mastery_updater = MasteryUpdater()
+        self.mastery_updater = MasteryUpdater(concept_params=CONCEPT_PARAMS)
         self.decay_engine = RetentionDecay()
         self.propagator = DependencyPropagator(graph)
         self.confidence_model = ConfidenceModel()
@@ -80,9 +81,10 @@ class CognitivePipeline:
         # 2️⃣ Apply BKT Update
         # ---------------------------
         updated_mastery = self.mastery_updater.update(
-            prior=student_state.mastery_dict.get(concept, 0.5),
-            correct=correct,
-            confidence=student_confidence
+        concept=concept,
+        current_mastery=student_state.mastery_dict.get(concept, 0.5),
+        correct=correct,
+        self_confidence=student_confidence
         )
 
         student_state.mastery_dict[concept] = updated_mastery

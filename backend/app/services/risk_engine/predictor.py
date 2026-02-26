@@ -44,12 +44,14 @@ class RiskPredictor:
         )
 
         risk_level = self._risk_level(probability)
-        confidence_score = 1 - abs(0.5 - probability) * 2
+        confidence_score = abs(probability - 0.5) * 2
 
         return {
-            "risk_probability": round(probability, 4),
-            "risk_level": risk_level,
-            "confidence_score": round(confidence_score, 4)
+        "risk_probability": probability,
+        "risk_level": risk_level,
+        "confidence_score": confidence_score,
+        "feature_vector": feature_vector.tolist(),
+        "features": features,
         }
 
     @staticmethod

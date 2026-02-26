@@ -10,7 +10,7 @@ class RetentionDecay:
     def __init__(self, base_decay_rate=0.01):
         self.base_decay_rate = base_decay_rate
 
-    def apply(self, mastery: float, last_attempt_time: datetime,
+    def apply_decay(self, mastery: float, last_attempt_time: datetime,
               current_time: datetime):
         """
         mastery            : current mastery
