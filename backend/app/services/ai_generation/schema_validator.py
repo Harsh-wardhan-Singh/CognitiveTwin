@@ -72,3 +72,12 @@ def validate_questions(raw_output: str):
         validated_questions.append(q)
 
     return validated_questions
+
+def validate_explanation(parsed: dict) -> str:
+    if not isinstance(parsed, dict):
+        raise SchemaValidationError("Root must be object")
+    if "adaptive_explanation" not in parsed:
+        raise SchemaValidationError("Missing 'adaptive_explanation' key")
+    if not isinstance(parsed["adaptive_explanation"], str):
+        raise SchemaValidationError("adaptive_explanation must be string")
+    return parsed["adaptive_explanation"]
