@@ -333,3 +333,27 @@
   color: #ff4d6d;
   font-weight: bold;
 }
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;   /* increased spacing */
+  margin-bottom: 28px;
+}
+
+.glass-panel {
+  margin-bottom: 24px;
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.detail-grid {
+  margin-top: 20px;
+}
+
+.explanation-panel {
+  margin-top: 10px;
+}

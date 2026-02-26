@@ -6,7 +6,7 @@ export function renderTeacherClassView() {
 
   app.innerHTML = `
     <div class="teacher-container">
-      <button id="backToClasses" class="submit-btn" style="margin-bottom:20px;">
+      <button id="backToClasses" class="glass-btn" style="margin-bottom:20px;">
         Back to Classrooms
       </button>
 
@@ -14,10 +14,12 @@ export function renderTeacherClassView() {
     </div>
   `
 
-  // Render heatmap + insights into teacherContent
+  // Render dashboard inside container
   renderTeacherDashboard()
 
-  document
-    .getElementById('backToClasses')
-    .addEventListener('click', renderTeacherClassSelect)
+  const backBtn = document.getElementById('backToClasses')
+
+  if (backBtn) {
+    backBtn.addEventListener('click', renderTeacherClassSelect)
+  }
 }
