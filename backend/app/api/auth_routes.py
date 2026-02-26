@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.schemas.user_schema import UserRegister, UserLogin
 from app.services.auth_services import register_user, login_user
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_role
 from app.models.user import User
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -46,3 +46,9 @@ def get_me(current_user: User = Depends(get_current_user)):
         "email": current_user.email,
         "role": current_user.role
     }
+
+@router.get("/teacher-only")
+def teacher_route(
+    current_user: User = Depends(require_role("teacher"))
+):
+    return {"message": "You are a teacher"}
