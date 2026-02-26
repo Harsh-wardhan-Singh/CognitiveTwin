@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 from fastapi import FastAPI , Depends
 from app.db.session import engine
 from app.db.base import Base
@@ -23,7 +22,6 @@ Base.metadata.create_all(bind=engine)
 def protected(user=Depends(get_current_user)):
     return {"user": user}
 
-=======
 from fastapi import FastAPI
 from app.db.session import engine
 from app.db.base import Base
@@ -34,7 +32,6 @@ app = FastAPI()
 # create tables
 Base.metadata.create_all(bind=engine)
 
->>>>>>> ac742c16d7a13110cd3c5d73e6ad6f243f888f96
 @app.get("/")
 def root():
     return {"message": "Backend running"}
