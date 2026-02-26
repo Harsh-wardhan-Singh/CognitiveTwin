@@ -1,25 +1,29 @@
 import { renderTeacherDashboard } from '../teacher/teacherDashboard.js'
 import { renderTeacherClassSelect } from './teacherClassSelectView.js'
+import { mountView } from '../testApp.js'
 
 export function renderTeacherClassView() {
-  const app = document.getElementById('app')
 
-  app.innerHTML = `
-    <div class="teacher-container">
-      <button id="backToClasses" class="glass-btn" style="margin-bottom:20px;">
-        Back to Classrooms
-      </button>
+  mountView((container) => {
 
-      <div id="teacherContent"></div>
-    </div>
-  `
+    container.innerHTML = `
+      <div class="teacher-container">
+        <button id="backToClasses" class="glass-btn" style="margin-bottom:20px;">
+          Back to Classrooms
+        </button>
 
-  // Render dashboard inside container
-  renderTeacherDashboard()
+        <div id="teacherContent"></div>
+      </div>
+    `
 
-  const backBtn = document.getElementById('backToClasses')
+    // Render dashboard inside teacherContent
+    renderTeacherDashboard()
 
-  if (backBtn) {
-    backBtn.addEventListener('click', renderTeacherClassSelect)
-  }
+    const backBtn = container.querySelector('#backToClasses')
+
+    if (backBtn) {
+      backBtn.addEventListener('click', renderTeacherClassSelect)
+    }
+
+  })
 }
