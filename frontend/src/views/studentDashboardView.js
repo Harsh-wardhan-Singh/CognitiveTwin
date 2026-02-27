@@ -1,7 +1,7 @@
 import { createMasteryChart, updateMasteryChart } from '../components/charts/masteryChart.js'
 import { createRiskRing, updateRiskRing } from '../components/indicators/riskRing.js'
-import { renderStudentPortal } from './studentHomeView.js'
-import { mountView } from '../testApp.js'
+import { renderStudentHome } from './studentHomeView.js'
+import { mountView, currentUser } from '../testApp.js'
 
 export function renderStudentDashboard(data) {
 
@@ -72,7 +72,12 @@ export function renderStudentDashboard(data) {
     /* ============================= */
 
     document
-  .getElementById('backBtn')
-  .addEventListener('click', renderStudentPortal)
+      .getElementById('backBtn')
+      .addEventListener('click', () => {
+        // If student is inside a classroom,
+        // go back to that classroom instead of selection screen
+        renderStudentHome(currentUser.activeClass)
+      })
+
   })
 }
