@@ -20,11 +20,12 @@ function generateCode() {
 export function createClassroom(teacherId) {
   const classrooms = load()
 
-  const classroom = {
-    id: generateCode(),
-    teacherId,
-    students: []
-  }
+ const classroom = {
+  id: generateCode(),
+  teacherId,
+  students: [],
+  testAttempts: []  
+}
 
   classrooms.push(classroom)
   save(classrooms)
@@ -56,4 +57,27 @@ export function getTeacherClassrooms(teacherId) {
 export function getStudentClassrooms(studentId) {
   const classrooms = load()
   return classrooms.filter(c => c.students.includes(studentId))
+}
+
+export function saveTestAttempt(classCode, studentId, attemptData) {
+  const classrooms = load()
+
+  const classroom = classrooms.find(c => c.id === classCode)
+
+  if (!classroom) return
+
+  if (!classroom.testAttempts) {
+    classroom.testAttempts = []
+  }
+
+  classroom.testAttempts.push({
+    studentId,
+    ...attemptData
+  })
+
+  save(classrooms)
+}
+export function getClassroomById(classCode) {
+  const classrooms = load()
+  return classrooms.find(c => c.id === classCode)
 }
