@@ -1,10 +1,10 @@
 from datetime import datetime
 from typing import Dict, Any
 
-from cognitive_engine.mastery_update import MasteryUpdater
-from cognitive_engine.retention_decay import RetentionDecay
-from cognitive_engine.dependency_propagation import DependencyPropagator
-from cognitive_engine.confidence_model import ConfidenceModel
+from .mastery_update import MasteryUpdater
+from .retention_decay import RetentionDecay
+from .dependency_propagation import DependencyPropagator
+from .confidence_model import ConfidenceModel
 
 from risk_engine.feature_extractor import RiskFeatureExtractor
 from risk_engine.predictor import RiskPredictor
@@ -12,7 +12,7 @@ from risk_engine.predictor import RiskPredictor
 from analytics.class_risk_aggregator import ClassRiskAggregator
 from analytics.heatmap_builder import HeatmapBuilder
 from analytics.insight_generator import InsightGenerator
-from app.services.cognitive_engine.bkt_config import CONCEPT_PARAMS
+from .bkt_config import CONCEPT_PARAMS
 
 
 class CognitivePipeline:
@@ -33,8 +33,10 @@ class CognitivePipeline:
         self,
         graph,
         risk_model_path: str,
-        training_data_store: list  # in-memory for now (replace with DB later)
+        training_data_store: list,# in-memory for now (replace with DB later)
+        db
     ):
+        self.db = db
         self.mastery_updater = MasteryUpdater(concept_params=CONCEPT_PARAMS)
         self.decay_engine = RetentionDecay()
         self.propagator = DependencyPropagator(graph)
@@ -52,6 +54,7 @@ class CognitivePipeline:
 
     def process_submission(
         self,
+        user_id : int,
         student_state,
         concept: str,
         correct: bool,
@@ -115,7 +118,7 @@ class CognitivePipeline:
         # ---------------------------
         # 6️⃣ Risk Feature Extraction
         # ---------------------------
-        feature_vector = self.feature_extractor.extract(
+        feature_vector = self.feature_extractor.extract_features(
             mastery_dict=student_state.mastery_dict,
             attempt_history=student_state.attempt_history,
             confidence_metrics=student_state.confidence_metrics,
@@ -139,14 +142,11 @@ class CognitivePipeline:
         # ---------------------------
         # 8️⃣ Analytics Integration
         # ---------------------------
-        class_risk = self.class_risk_aggregator.aggregate(class_states)
+        class_risk = self.class_risk_aggregator.aggregate_from_mastery(self.db)
 
-        heatmap = self.heatmap_builder.build(class_states)
+        heatmap = self.heatmap_builder.build_class_matrix(self.db)
 
-        insights = self.insight_generator.generate(
-            student_state=student_state,
-            class_states=class_states
-        )
+        insights = self.insight_generator.generate_student_insights(self.db, user_id)
 
         # ---------------------------
         # 9️⃣ Delta Snapshot (Teacher Real-Time View)

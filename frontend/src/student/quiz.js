@@ -8,6 +8,7 @@ import {
 import '../styles/dashboard.css'
 import { currentUser } from '../testApp.js'
 import { renderStudentDashboard } from '../views/studentDashboardView.js'
+import { mountView } from '../testApp.js'
 
 /* ============================= */
 /* DIAGNOSTIC TRACKING */
@@ -71,7 +72,6 @@ const questionBank = {
 /* ============================= */
 
 export function renderQuiz() {
-  const app = document.getElementById('app')
   const state = getStudentState()
 
   conceptQueue = Object.keys(state.mastery)
@@ -81,13 +81,15 @@ export function renderQuiz() {
     conceptStatus[c] = false
   })
 
-  app.innerHTML = `
-    <div class="background-glow"></div>
-    <div class="dashboard-container">
-      <h1 class="dashboard-title">Diagnostic Quiz</h1>
-      <div class="card quiz-card" id="quizCard"></div>
-    </div>
-  `
+  mountView((container) => {
+    container.innerHTML = `
+      <div class="background-glow"></div>
+      <div class="dashboard-container">
+        <h1 class="dashboard-title">Diagnostic Quiz</h1>
+        <div class="card quiz-card" id="quizCard"></div>
+      </div>
+    `
+  })
 
   loadNextConcept()
 }
