@@ -1,15 +1,14 @@
-import { joinClassroom, getStudentClassrooms } from '../services/classroomStore.js'
 import { getTestsForClassroom } from '../services/testStore.js'
-import { currentUser } from '../testApp.js'
+import { currentUser, mountView } from '../testApp.js'
 import { renderStudentDashboard } from './studentDashboardView.js'
 import { renderQuiz, renderCustomTest } from '../student/quiz.js'
-import { mountView } from '../testApp.js'
+import { fetchStudentClassrooms, joinClassroom as joinClassroomAPI } from '../services/api.js'
 
 /* ============================= */
 /* MAIN STUDENT HOME */
 /* ============================= */
 
-export function renderStudentHome(forceClassCode = null) {
+export async function renderStudentHome(forceClassCode = null) {
 
   if (forceClassCode) {
     currentUser.activeClass = forceClassCode
@@ -22,9 +21,6 @@ export function renderStudentHome(forceClassCode = null) {
 
   mountView((container) => {
 
-    const classrooms =
-      getStudentClassrooms(currentUser.id)
-
     container.innerHTML = `
       <div class="dashboard-container">
         <h1>Your Classrooms</h1>
@@ -32,7 +28,7 @@ export function renderStudentHome(forceClassCode = null) {
         <div class="glass-panel" style="margin-bottom:20px;">
           <input
             id="joinCode"
-            placeholder="Enter Classroom Code"
+            placeholder="Enter Classroom ID or Code"
             style="padding:8px;"
           />
 
@@ -48,47 +44,57 @@ export function renderStudentHome(forceClassCode = null) {
     const classList =
       document.getElementById('classList')
 
-    if (classrooms.length === 0) {
-      classList.innerHTML =
-        "<p>No classrooms joined yet.</p>"
-    } else {
-      classList.innerHTML =
-        classrooms.map(c => `
-          <div class="glass-panel clickable"
-               data-code="${c.id}">
-            Classroom: ${c.id}
-          </div>
-        `).join('')
-    }
+    // Fetch classrooms from backend
+    fetchStudentClassrooms().then(classrooms => {
+      if (classrooms.length === 0) {
+        classList.innerHTML =
+          "<p>No classrooms joined yet.</p>"
+      } else {
+        classList.innerHTML =
+          classrooms.map(c => `
+            <div class="glass-panel clickable"
+                 data-id="${c.id}">
+              ${c.name || 'Classroom'}<br/>
+              <small>${c.subject || 'N/A'}</small>
+            </div>
+          `).join('')
+        
+        document
+          .querySelectorAll('[data-id]')
+          .forEach(panel => {
+            panel.addEventListener('click', () => {
+              currentUser.activeClass =
+                panel.dataset.id
+              renderStudentClassroomView()
+            })
+          })
+      }
+    }).catch(err => {
+      console.error("Failed to load classrooms:", err)
+      classList.innerHTML = "<p>Error loading classrooms</p>"
+    })
 
     document
       .getElementById('joinBtn')
-      .addEventListener('click', () => {
+      .addEventListener('click', async () => {
 
         const code =
           document.getElementById('joinCode')
-            .value.trim().toUpperCase()
+            .value.trim()
 
-        const classroom =
-          joinClassroom(code, currentUser.id)
-
-        if (!classroom) {
-          alert("Invalid classroom code.")
+        if (!code) {
+          alert("Please enter a classroom ID")
           return
         }
 
-        currentUser.activeClass = code
-        renderStudentClassroomView()
-      })
-
-    document
-      .querySelectorAll('[data-code]')
-      .forEach(panel => {
-        panel.addEventListener('click', () => {
-          currentUser.activeClass =
-            panel.dataset.code
-          renderStudentClassroomView()
-        })
+        try {
+          // Try to join using the code as classroom ID
+          await joinClassroomAPI(parseInt(code) || code)
+          currentUser.activeClass = code
+          renderStudentHome()
+        } catch (err) {
+          alert("Failed to join classroom: " + err.message)
+        }
       })
   })
 }

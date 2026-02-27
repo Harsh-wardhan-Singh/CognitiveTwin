@@ -7,7 +7,7 @@ let questionsByConcept = {}  // Loaded from API
 
 import { renderTestBreakdown } from '../views/studentHomeView.js'
 import { getStudentState, updateStudentState, updateCognitiveMastery, calculateRisk } from '../services/state.js'
-import { fetchAllQuestions, fetchQuestionsByConcept, checkHasAttemptedQuiz } from '../services/api.js'
+import { fetchAllQuestions, fetchQuestionsByConcept, checkHasAttemptedQuiz, API_BASE_URL, submitQuizAnswer } from '../services/api.js'
 import '../styles/dashboard.css'
 import { currentUser } from '../testApp.js'
 import { renderStudentDashboard } from '../views/studentDashboardView.js'
@@ -26,6 +26,10 @@ export async function renderQuiz() {
     const quizStatus = await checkHasAttemptedQuiz()
     if (quizStatus.has_attempted) {
       alert("You have already taken the diagnostic quiz. You cannot re-attempt it.")
+      // Don't return, reconstruct state from backend instead
+      currentUser.hasTakenQuiz = true
+      const { renderStudentHome } = await import('../views/studentHomeView.js')
+      renderStudentHome()
       return
     }
     
@@ -145,6 +149,36 @@ function evaluateAnswer(questionObj) {
   const confidenceWeight = typeof selectedConfidence === 'number' ? selectedConfidence : 0.8
   const signalStrength = speedWeight * confidenceWeight
 
+  // Convert selected answers to string for submission
+  const userAnswer = [...selectedAnswers].join("|")
+  
+  // Submit answer to backend pipeline for real-time analytics update
+  submitQuizAnswer(
+    questionObj.id,
+    userAnswer,
+    Math.round(selectedConfidence * 10), // Convert to 1-10 scale
+    responseTime * 1000 // Convert to milliseconds
+  ).then(pipelineResult => {
+    // Update frontend state with real-time results from pipeline
+    if (pipelineResult && pipelineResult.mastery_update) {
+      const concept = pipelineResult.mastery_update.concept
+      const newMastery = pipelineResult.mastery_update.new_value
+      
+      // Update local state with backend-calculated mastery
+      const state = getStudentState()
+      if (state.mastery[concept]) {
+        state.mastery[concept].value = newMastery
+      }
+      
+      // Update risk if returned
+      if (pipelineResult.risk_score !== undefined) {
+        updateStudentState({ risk: pipelineResult.risk_score })
+      }
+    }
+  }).catch(err => {
+    console.error("Backend submission failed, continuing with local state:", err)
+  })
+
   if (isCustomTest) {
     attemptLog.push({
       question: questionObj.question_text,
@@ -159,6 +193,7 @@ function evaluateAnswer(questionObj) {
     return
   }
 
+  // For diagnostic quiz - also update local state
   updateCognitiveMastery(currentConcept, fullyCorrect, signalStrength)
   conceptStatus[currentConcept] = true
 
@@ -189,6 +224,21 @@ function showResults() {
       saveTestAttempt(currentUser.activeClass, currentUser.id, attemptData)
     }
 
+    // Fetch fresh data from backend (pipeline has already updated it)
+    fetch(`${API_BASE_URL}/student/dashboard`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    }).then(r => r.json()).then(backendData => {
+      if (backendData) {
+        // Update local state with backend-calculated analytics
+        currentUser.data = {
+          mastery: backendData.mastery || currentUser.data.mastery,
+          risk: backendData.risk || currentUser.data.risk
+        }
+      }
+    }).catch(e => console.log("Could not fetch fresh dashboard data:", e))
+
     currentUser.data = getStudentState()
     renderTestBreakdown(activeTestId)
 
@@ -198,8 +248,27 @@ function showResults() {
     return
   }
 
+  // Diagnostic quiz completed - mark as taken
   currentUser.hasTakenQuiz = true
   currentUser.data = getStudentState()
+  
+  // Save diagnostic quiz completion to backend (creates initial assessment)
+  try {
+    const diagnosticData = {
+      completed_at: new Date().toISOString(),
+      mastery_scores: currentUser.data.mastery
+    }
+    
+    fetch(`${API_BASE_URL}/quiz/diagnostic/complete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(diagnosticData)
+    }).catch(e => console.log("Backend diagnostic save optional:", e))
+  } catch (e) {
+    console.log("Optional diagnostic backend save failed:", e)
+  }
+  
   renderStudentDashboard(currentUser.data)
 }
 

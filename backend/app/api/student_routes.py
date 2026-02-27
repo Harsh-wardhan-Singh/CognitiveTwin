@@ -6,6 +6,7 @@ from app.models.classroom import Classroom
 from app.models.classroom_student import ClassroomStudent
 from app.models.mastery import Mastery
 from app.models.attempt import Attempt
+from app.models.risk_history import RiskHistory
 from app.core.dependencies import require_role, get_current_user
 from app.models.user import RoleEnum, User
 from app.schemas.analytics_schema import DashboardResponse, InsightResponse
@@ -24,6 +25,18 @@ def _get_student_state(db: Session, user_id: int) -> StudentState:
     for row in mastery_rows:
         state.mastery_dict[row.concept] = row.mastery_value
         state.confidence_metrics[row.concept] = row.confidence
+    
+    # Load latest risk profile
+    latest_risk = db.query(RiskHistory).filter(
+        RiskHistory.student_id == str(user_id)
+    ).order_by(RiskHistory.timestamp.desc()).first()
+    
+    if latest_risk:
+        state.risk_profile = {
+            "risk_probability": latest_risk.risk_score,
+            "risk_label": latest_risk.risk_label,
+            "risk_level": "high" if latest_risk.risk_score > 0.6 else "medium" if latest_risk.risk_score > 0.3 else "low"
+        }
     
     return state
 

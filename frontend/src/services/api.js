@@ -2,7 +2,7 @@
    API SERVICE LAYER
    ===================================================== */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
+export const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
 /**
  * Fetch student dashboard with mastery, risk, and insights
@@ -387,6 +387,79 @@ export async function checkHasAttemptedQuiz() {
     return await response.json()
   } catch (error) {
     console.error("Quiz attempt check error:", error)
+    throw error
+  }
+}
+
+/**
+ * Get teacher's classrooms
+ */
+export async function fetchTeacherClassrooms() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/teacher/classrooms`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include"
+    })
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch teacher classrooms: ${response.statusText}`)
+    }
+    
+    return await response.json()
+  } catch (error) {
+    console.error("Teacher classrooms fetch error:", error)
+    throw error
+  }
+}
+
+/**
+ * Get students in a classroom
+ */
+export async function fetchClassroomStudents(classroomId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/teacher/classroom/${classroomId}/students`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include"
+    })
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch classroom students: ${response.statusText}`)
+    }
+    
+    return await response.json()
+  } catch (error) {
+    console.error("Classroom students fetch error:", error)
+    throw error
+  }
+}
+
+/**
+ * Create a classroom
+ */
+export async function createTeacherClassroom(name) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/teacher/classroom`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        name: name,
+        subject: "",
+        syllabus_scope: "",
+        exam_pattern: "",
+        progress_topics: []
+      })
+    })
+    
+    if (!response.ok) {
+      throw new Error(`Failed to create classroom: ${response.statusText}`)
+    }
+    
+    return await response.json()
+  } catch (error) {
+    console.error("Create classroom error:", error)
     throw error
   }
 }

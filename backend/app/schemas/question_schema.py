@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 
 class QuestionCreate(BaseModel):
@@ -36,3 +36,9 @@ class SubmitAnswerRequest(BaseModel):
     user_answer: str
     confidence: int = Field(..., ge=1, le=10)
     response_time: float  # milliseconds
+
+
+class DiagnosticCompleteRequest(BaseModel):
+    """Request body for completing diagnostic quiz"""
+    completed_at: str
+    mastery_scores: Dict[str, dict]  # Maps concept to {value, confidence}

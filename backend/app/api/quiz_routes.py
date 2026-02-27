@@ -11,7 +11,7 @@ from app.core.dependencies import get_current_user
 from app.models.user import User
 from app.models.question import Question
 from app.models.attempt import Attempt
-from app.schemas.question_schema import QuestionForQuiz, SubmitAnswerRequest
+from app.schemas.question_schema import QuestionForQuiz, SubmitAnswerRequest, DiagnosticCompleteRequest
 from app.schemas.analytics_schema import RiskScoreResponse
 from app.core.service_container import get_service_container
 from app.core.exceptions import (
@@ -30,7 +30,7 @@ router = APIRouter(prefix="/quiz", tags=["Quiz"])
 def _get_or_create_student_state(db: Session, user_id: int) -> StudentState:
     """
     Get or create in-memory student state from database.
-    This loads mastery and attempt history.
+    This loads mastery, attempt history, and risk profile.
     """
     state = StudentState(student_id=user_id)
     
@@ -43,14 +43,29 @@ def _get_or_create_student_state(db: Session, user_id: int) -> StudentState:
     # Load attempt history
     attempts = db.query(Attempt).filter(Attempt.user_id == user_id).all()
     for attempt in attempts:
-        concept = db.query(Question).filter(Question.id == attempt.question_id).first().concept
-        state.attempt_history.setdefault(concept, []).append(attempt.is_correct)
+        concept_row = db.query(Question).filter(Question.id == attempt.question_id).first()
+        if concept_row:
+            concept = concept_row.concept
+            state.attempt_history.setdefault(concept, []).append(attempt.is_correct)
+    
+    # Load latest risk profile
+    latest_risk = db.query(RiskHistory).filter(
+        RiskHistory.student_id == str(user_id)
+    ).order_by(RiskHistory.timestamp.desc()).first()
+    
+    if latest_risk:
+        state.risk_profile = {
+            "risk_probability": latest_risk.risk_score,
+            "risk_label": latest_risk.risk_label,
+            "risk_level": "high" if latest_risk.risk_score > 0.6 else "medium" if latest_risk.risk_score > 0.3 else "low"
+        }
     
     return state
 
 
 # Import at module level after function definitions
 from app.models.mastery import Mastery
+from app.models.risk_history import RiskHistory
 
 
 @router.get("/questions/all")
@@ -152,6 +167,54 @@ def check_has_attempted_quiz(
     """
     attempt_count = db.query(Attempt).filter(Attempt.user_id == current_user.id).count()
     return {"has_attempted": attempt_count > 0}
+
+
+@router.post("/diagnostic/complete")
+def complete_diagnostic_quiz(
+    request_data: DiagnosticCompleteRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Mark diagnostic quiz as complete and save initial mastery assessment.
+    This creates the initial student data table for the teacher to see.
+    """
+    try:
+        mastery_scores = request_data.mastery_scores
+        
+        # Save mastery for each concept from diagnostic
+        for concept, mastery_data in mastery_scores.items():
+            mastery_value = mastery_data.get("value", 0.5) if isinstance(mastery_data, dict) else 0.5
+            confidence = mastery_data.get("confidence", 0.5) if isinstance(mastery_data, dict) else 0.5
+            
+            # Check if mastery for this concept already exists
+            existing = db.query(Mastery).filter(
+                Mastery.user_id == current_user.id,
+                Mastery.concept == concept
+            ).first()
+            
+            if existing:
+                # Update with diagnostic results
+                existing.mastery_value = mastery_value
+                existing.confidence = confidence
+            else:
+                # Create new mastery record
+                new_mastery = Mastery(
+                    user_id=current_user.id,
+                    concept=concept,
+                    mastery_value=mastery_value,
+                    confidence=confidence
+                )
+                db.add(new_mastery)
+        
+        db.commit()
+        return {"success": True, "message": "Diagnostic quiz results saved"}
+    
+    except Exception as e:
+        db.rollback()
+        print(f"Error saving diagnostic: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to save diagnostic results: {str(e)}")
+
 
 
 
@@ -298,6 +361,15 @@ def submit_answer(
                 mastery_value,
                 student_state.confidence_metrics.get(concept_name, 0.5)
             )
+        
+        # Store risk score to database for real-time analytics
+        if student_state.risk_profile:
+            risk_entry = RiskHistory(
+                student_id=str(current_user.id),
+                risk_label=student_state.risk_profile.get("risk_label", 0),
+                risk_score=float(student_state.risk_profile.get("risk_probability", 0))
+            )
+            db.add(risk_entry)
         
         db.commit()
         

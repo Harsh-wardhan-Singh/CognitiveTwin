@@ -2,25 +2,21 @@ import './teacher.css'
 import { fetchClassInsights } from '../services/api.js'
 import { currentUser } from '../testApp.js'
 
-export async function renderTeacherDashboard() {
-  const container = document.getElementById('teacherContent')
-
-  if (!currentUser.activeClass) {
-    container.innerHTML = `
-      <div class="teacher-container">
-        <h1 class="teacher-title">Class Cognitive Overview</h1>
-        <p>Please select a classroom first.</p>
-      </div>
-    `
+export async function renderTeacherDashboard(classroomId, forceRefresh = false) {
+  const container = document.getElementById('dashboardContent')
+  
+  if (!classroomId) {
+    container.innerHTML = `<p>Please select a classroom first.</p>`
     return
   }
 
   try {
-    const classAnalytics = await fetchClassInsights(currentUser.activeClass)
+    const classAnalytics = await fetchClassInsights(classroomId)
     
     container.innerHTML = `
-      <div class="teacher-container">
-        <h1 class="teacher-title">Class Cognitive Overview</h1>
+      <div style="margin-bottom: 30px;">
+        <h2 class="teacher-title">Class Cognitive Overview</h2>
+        <button id="refreshBtn" class="glass-btn" style="margin-bottom:20px;">Refresh Data</button>
         <div class="class-summary" id="classSummary"></div>
         <div class="teacher-insights" id="teacherInsights"></div>
         <div id="heatmap" class="heatmap"></div>
@@ -30,11 +26,15 @@ export async function renderTeacherDashboard() {
     renderClassSummary(classAnalytics)
     renderInsights(classAnalytics)
     renderHeatmap(classAnalytics)
+    
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+      renderTeacherDashboard(classroomId, true)
+    })
   } catch (error) {
     console.error("Failed to load class insights:", error)
     container.innerHTML = `
-      <div class="teacher-container">
-        <h1 class="teacher-title">Class Cognitive Overview</h1>
+      <div style="margin-bottom: 30px;">
+        <h2 class="teacher-title">Class Cognitive Overview</h2>
         <p>No data available yet. Students need to complete exams first.</p>
       </div>
     `
@@ -59,7 +59,7 @@ function renderHeatmap(analytics) {
   `
 
   concepts.forEach(c => {
-    const value = analytics.heatmap[c] * 100
+    const value = analytics.heatmap[c]
     html += `
       <div class="heatmap-row">
         <div class="heatmap-cell">${c}</div>
@@ -93,7 +93,7 @@ function renderInsights(analytics) {
 
     <div class="insight-card">
       <h3>Average Class Mastery</h3>
-      <p>${Math.round((analytics.average_mastery || 0) * 100)}%</p>
+      <p>${Math.round(analytics.average_mastery || 0)}%</p>
     </div>
 
     <div class="insight-card">
@@ -109,13 +109,13 @@ function renderClassSummary(analytics) {
   const concepts = Object.keys(heatmap)
 
   const conceptHTML = concepts.map(
-    (concept) => `<div>${concept}: ${Math.round(heatmap[concept] * 100)}%</div>`
+    (concept) => `<div>${concept}: ${Math.round(heatmap[concept])}%</div>`
   ).join('')
 
   summary.innerHTML = `
     <div class="insight-card">
       <h3>Class Average Risk</h3>
-      <p>${Math.round((1 - (analytics.average_mastery || 0)) * 100)}%</p>
+      <p>${Math.max(0, Math.round(100 - (analytics.average_mastery || 0)))}%</p>
     </div>
 
     <div class="insight-card">
@@ -131,7 +131,8 @@ function renderClassSummary(analytics) {
 }
 
 function getColor(value) {
-  const red = Math.round(255 - (value * 2.5))
-  const green = Math.round(value * 2.5)
+  // value is 0-100, scale to 0-255 range
+  const red = Math.round(255 - (value * 2.55))
+  const green = Math.round(value * 2.55)
   return `rgb(${red}, ${green}, 80)`
 }

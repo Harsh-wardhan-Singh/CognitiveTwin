@@ -1,19 +1,19 @@
 from pydantic import BaseModel
-from typing import Optional, Dict
+from typing import Optional, List, Any
 
 
 class ClassroomCreate(BaseModel):
     name: str
-    subject: str
-    syllabus_scope: Optional[Dict] = None
-    exam_pattern: Optional[Dict] = None
-    progress_topics: Optional[Dict] = None
+    subject: Optional[str] = None
+    syllabus_scope: Optional[str] = None
+    exam_pattern: Optional[str] = None
+    progress_topics: Optional[List[str]] = None
 
 
 class ClassroomResponse(BaseModel):
     id: int
     name: str
-    subject: str
+    subject: Optional[str] = None
 
     class Config:
         from_attributes = True
