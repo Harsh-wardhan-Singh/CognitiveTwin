@@ -10,3 +10,6 @@ class Question(Base):
     difficulty = Column(Integer)
     question_text = Column(Text, unique=True)
     correct_answer = Column(String)
+    options = Column(Text, default="")  # Pipe-separated options
+    question_type = Column(String, default="single")  # "single" or "multiple"
+    is_multiple = Column(String, default="false")  # "true" or "false"

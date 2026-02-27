@@ -83,10 +83,15 @@ function routeUser() {
 
 // Check if user already has a valid backend session
 (async () => {
-  const existingSession = await checkExistingSession()
-  if (existingSession) {
-    setUser(existingSession)
-  } else {
+  try {
+    const existingSession = await checkExistingSession()
+    if (existingSession) {
+      setUser(existingSession)
+    } else {
+      renderLogin()
+    }
+  } catch (error) {
+    console.error('Startup error:', error)
     renderLogin()
   }
 })()

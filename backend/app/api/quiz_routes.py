@@ -53,7 +53,108 @@ def _get_or_create_student_state(db: Session, user_id: int) -> StudentState:
 from app.models.mastery import Mastery
 
 
-@router.get("/next-question")
+@router.get("/questions/all")
+def get_all_questions(
+    limit: int = 500,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get all questions grouped by concept (used for diagnostic test).
+    Returns questions organized by concept with options.
+    """
+    try:
+        questions = db.query(Question).limit(limit).all()
+        
+        if not questions:
+            raise NotFoundError("Question", "any")
+        
+        # Group by concept
+        questions_by_concept = {}
+        for q in questions:
+            if q.concept not in questions_by_concept:
+                questions_by_concept[q.concept] = []
+            
+            options_list = q.options.split("||") if q.options else []
+            correct_list = q.correct_answer.split("|") if q.correct_answer else []
+            
+            questions_by_concept[q.concept].append({
+                "id": q.id,
+                "topic": q.topic,
+                "concept": q.concept,
+                "difficulty": q.difficulty,
+                "question_text": q.question_text,
+                "question": q.question_text,  # Alias
+                "options": options_list,
+                "correct": correct_list,
+                "multi": q.is_multiple == "true",
+                "correct_answer": q.correct_answer
+            })
+        
+        return questions_by_concept
+    except NotFoundError:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get questions: {str(e)}")
+
+
+@router.get("/questions/by-concept/{concept}")
+def get_questions_by_concept(
+    concept: str,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get questions for a specific concept.
+    Returns questions with options.
+    """
+    try:
+        questions = db.query(Question).filter(
+            Question.concept == concept
+        ).limit(limit).all()
+        
+        if not questions:
+            raise NotFoundError("Question", f"with concept {concept}")
+        
+        result = []
+        for q in questions:
+            options_list = q.options.split("||") if q.options else []
+            correct_list = q.correct_answer.split("|") if q.correct_answer else []
+            
+            result.append({
+                "id": q.id,
+                "topic": q.topic,
+                "concept": q.concept,
+                "difficulty": q.difficulty,
+                "question_text": q.question_text,
+                "question": q.question_text,  # Alias
+                "options": options_list,
+                "correct": correct_list,
+                "multi": q.is_multiple == "true",
+                "correct_answer": q.correct_answer
+            })
+        
+        return result
+    except NotFoundError:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get questions: {str(e)}")
+
+
+@router.get("/has-attempted")
+def check_has_attempted_quiz(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Check if user has attempted a quiz
+    """
+    attempt_count = db.query(Attempt).filter(Attempt.user_id == current_user.id).count()
+    return {"has_attempted": attempt_count > 0}
+
+
+
 def get_next_question(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)

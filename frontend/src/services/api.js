@@ -324,3 +324,69 @@ export async function logoutUser() {
     throw error
   }
 }
+
+/**
+ * Fetch all questions grouped by concept
+ */
+export async function fetchAllQuestions() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/quiz/questions/all`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include"
+    })
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch all questions: ${response.statusText}`)
+    }
+    
+    return await response.json()
+  } catch (error) {
+    console.error("All questions fetch error:", error)
+    throw error
+  }
+}
+
+/**
+ * Fetch questions for a specific concept
+ */
+export async function fetchQuestionsByConcept(concept) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/quiz/questions/by-concept/${concept}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include"
+    })
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch questions for concept: ${response.statusText}`)
+    }
+    
+    return await response.json()
+  } catch (error) {
+    console.error("Concept questions fetch error:", error)
+    throw error
+  }
+}
+
+/**
+ * Check if user has attempted the quiz
+ */
+export async function checkHasAttemptedQuiz() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/quiz/has-attempted`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include"
+    })
+    
+    if (!response.ok) {
+      throw new Error(`Failed to check quiz attempt status: ${response.statusText}`)
+    }
+    
+    return await response.json()
+  } catch (error) {
+    console.error("Quiz attempt check error:", error)
+    throw error
+  }
+}

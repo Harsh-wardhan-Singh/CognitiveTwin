@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, JSON
-from backend.app.db.base import Base
+from app.db.base import Base
 
 class TrainingData(Base):
     __tablename__ = "training_data"

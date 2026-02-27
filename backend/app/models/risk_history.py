@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, Float, String, DateTime
 from sqlalchemy.sql import func
-from backend.app.db.base import Base
+from app.db.base import Base
 
 class RiskHistory(Base):
     __tablename__ = "risk_history"
