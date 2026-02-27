@@ -1,5 +1,5 @@
 import numpy as np
-from feature_schema import FEATURE_ORDER
+from app.services.risk_engine.feature_schema import FEATURE_ORDER
 
 
 class RiskFeatureExtractor:

@@ -2,7 +2,7 @@ import os
 import joblib
 import numpy as np
 from typing import Dict, Any
-from feature_schema import FEATURE_ORDER
+from app.services.risk_engine.feature_schema import FEATURE_ORDER
 
 
 class RiskPredictor:

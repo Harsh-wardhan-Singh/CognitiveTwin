@@ -1,4 +1,4 @@
-from event_bus import EventBus
+from app.services.core.event_bus import EventBus
 
 
 class SubmissionController:

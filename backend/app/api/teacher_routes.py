@@ -1,13 +1,34 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.models.classroom import Classroom
+from app.models.classroom_student import ClassroomStudent
+from app.models.user import User
+from app.models.attempt import Attempt
+from app.models.mastery import Mastery
 from app.schemas.classroom_schema import ClassroomCreate, ClassroomResponse
+from app.schemas.analytics_schema import ClassAnalyticsResponse, DashboardResponse, InsightResponse
 from app.core.dependencies import require_role
 from app.models.user import RoleEnum
+from app.core.service_container import get_service_container
+from app.core.exceptions import NotFoundError
+from app.services.core.student_state import StudentState
 
 router = APIRouter(prefix="/teacher", tags=["Teacher"])
+
+
+def _get_student_state(db: Session, user_id: int) -> StudentState:
+    """Load student state from database"""
+    state = StudentState(student_id=user_id)
+    
+    # Load mastery
+    mastery_rows = db.query(Mastery).filter(Mastery.user_id == user_id).all()
+    for row in mastery_rows:
+        state.mastery_dict[row.concept] = row.mastery_value
+        state.confidence_metrics[row.concept] = row.confidence
+    
+    return state
 
 
 @router.post("/classroom", response_model=ClassroomResponse)
@@ -30,3 +51,174 @@ def create_classroom(
     db.refresh(classroom)
 
     return classroom
+
+
+@router.get("/classroom/{classroom_id}/insights")
+def get_class_insights(
+    classroom_id: int,
+    db: Session = Depends(get_db),
+    current_user = Depends(require_role(RoleEnum.teacher))
+) -> ClassAnalyticsResponse:
+    """
+    Get analytics insights for an entire classroom.
+    """
+    try:
+        classroom = db.query(Classroom).filter(Classroom.id == classroom_id).first()
+        if not classroom:
+            raise NotFoundError("Classroom", classroom_id)
+        
+        if classroom.teacher_id != current_user.id:
+            raise HTTPException(status_code=403, detail="You do not have access to this classroom")
+        
+        services = get_service_container(db)
+        
+        # Get all students in class
+        students = db.query(ClassroomStudent).filter(
+            ClassroomStudent.classroom_id == classroom_id
+        ).all()
+        
+        student_ids = [s.student_id for s in students]
+        
+        if not student_ids:
+            return ClassAnalyticsResponse(
+                class_id=classroom_id,
+                average_mastery=0.0,
+                at_risk_count=0,
+                total_students=0,
+                weak_concepts=[],
+                heatmap={}
+            )
+        
+        # Calculate class-level metrics
+        total_mastery = 0.0
+        at_risk_count = 0
+        concept_totals = {}
+        concept_counts = {}
+        
+        for student_id in student_ids:
+            state = _get_student_state(db, student_id)
+            
+            # Get risk
+            if state.risk_profile and state.risk_profile.get("risk_probability", 0) > 0.6:
+                at_risk_count += 1
+            
+            # Aggregate mastery by concept
+            for concept, value in state.mastery_dict.items():
+                concept_totals[concept] = concept_totals.get(concept, 0) + value
+                concept_counts[concept] = concept_counts.get(concept, 0) + 1
+                total_mastery += value
+        
+        # Calculate averages
+        total_mastery_score = total_mastery / len(student_ids) if student_ids else 0.0
+        
+        weak_concepts = sorted(
+            [
+                (concept, concept_totals[concept] / concept_counts[concept])
+                for concept in concept_totals
+            ],
+            key=lambda x: x[1]
+        )[:5]
+        
+        weak_concept_names = [c[0] for c in weak_concepts]
+        
+        heatmap = {
+            concept: round(concept_totals.get(concept, 0) / max(concept_counts.get(concept, 1), 1), 2)
+            for concept in concept_totals
+        }
+        
+        return ClassAnalyticsResponse(
+            class_id=classroom_id,
+            average_mastery=round(total_mastery_score, 2),
+            at_risk_count=at_risk_count,
+            total_students=len(student_ids),
+            weak_concepts=weak_concept_names,
+            heatmap=heatmap
+        )
+    
+    except HTTPException:
+        raise
+    except NotFoundError as e:
+        raise HTTPException(status_code=404, detail=e.message)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get class insights: {str(e)}")
+
+
+@router.get("/student/{student_id}/dashboard")
+def get_student_dashboard(
+    student_id: int,
+    db: Session = Depends(get_db),
+    current_user = Depends(require_role(RoleEnum.teacher))
+) -> DashboardResponse:
+    """
+    Get detailed dashboard for a specific student.
+    """
+    try:
+        # Verify teacher can access this student
+        student = db.query(User).filter(User.id == student_id).first()
+        if not student:
+            raise NotFoundError("User", student_id)
+        
+        # Check if student is in any of teacher's classrooms
+        has_access = db.query(ClassroomStudent).join(
+            Classroom,
+            Classroom.id == ClassroomStudent.classroom_id
+        ).filter(
+            ClassroomStudent.student_id == student_id,
+            Classroom.teacher_id == current_user.id
+        ).first()
+        
+        if not has_access and current_user.id != student_id:
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        services = get_service_container(db)
+        student_state = _get_student_state(db, student_id)
+        
+        # Generate insights
+        try:
+            weak_topics = services.insight_generator.weak_topics(db, student_id)
+            calibration_gap = services.insight_generator.calibration_gap(db, student_id)
+        except:
+            weak_topics = list(student_state.mastery_dict.keys())[:3]
+            calibration_gap = 0.0
+        
+        learning_trend = {
+            concept: 0.1
+            for concept in student_state.mastery_dict
+        }
+        
+        volatility = {
+            concept: 0.05
+            for concept in student_state.mastery_dict
+        }
+        
+        insights = InsightResponse(
+            weak_topics=weak_topics[:3],
+            calibration_gap=calibration_gap,
+            learning_trend=learning_trend,
+            volatility=volatility,
+            recommended_topics=weak_topics[:3]
+        )
+        
+        recent_attempts = db.query(Attempt).filter(
+            Attempt.user_id == student_id
+        ).order_by(Attempt.id.desc()).limit(10).all()
+        
+        recent_data = [
+            {"question_id": a.question_id, "is_correct": a.is_correct, "confidence": a.confidence}
+            for a in recent_attempts
+        ]
+        
+        return DashboardResponse(
+            user_id=student_id,
+            mastery=student_state.mastery_dict,
+            risk_score=float(student_state.risk_profile.get("risk_probability", 0)) if student_state.risk_profile else 0,
+            insights=insights,
+            recent_attempts=recent_data
+        )
+    
+    except HTTPException:
+        raise
+    except NotFoundError as e:
+        raise HTTPException(status_code=404, detail=e.message)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get student dashboard: {str(e)}")

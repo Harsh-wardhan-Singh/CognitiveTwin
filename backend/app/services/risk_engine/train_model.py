@@ -8,7 +8,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, roc_auc_score
 
-from feature_schema import FEATURE_ORDER
+from app.services.risk_engine.feature_schema import FEATURE_ORDER
 
 
 def load_from_csv(path):

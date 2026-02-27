@@ -6,12 +6,12 @@ from .retention_decay import RetentionDecay
 from .dependency_propagation import DependencyPropagator
 from .confidence_model import ConfidenceModel
 
-from risk_engine.feature_extractor import RiskFeatureExtractor
-from risk_engine.predictor import RiskPredictor
+from app.services.risk_engine.feature_extractor import RiskFeatureExtractor
+from app.services.risk_engine.predictor import RiskPredictor
 
-from analytics.class_risk_aggregator import ClassRiskAggregator
-from analytics.heatmap_builder import HeatmapBuilder
-from analytics.insight_generator import InsightGenerator
+from app.services.analytics.class_risk_aggregator import ClassRiskAggregator
+from app.services.analytics.heatmap_builder import HeatmapBuilder
+from app.services.analytics.insight_generator import InsightGenerator
 from .bkt_config import CONCEPT_PARAMS
 
 
