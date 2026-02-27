@@ -224,11 +224,16 @@ export async function loginUser(email, password) {
       })
     })
     
+    const data = await response.json()
+    
     if (!response.ok) {
-      throw new Error(`Login failed: ${response.statusText}`)
+      const error = new Error(data.message || data.detail || `Login failed: ${response.statusText}`)
+      error.statusCode = response.status
+      error.details = data.details || null
+      throw error
     }
     
-    return await response.json()
+    return data
   } catch (error) {
     console.error("Login error:", error)
     throw error
@@ -250,11 +255,16 @@ export async function registerUser(email, password, role) {
       })
     })
     
+    const data = await response.json()
+    
     if (!response.ok) {
-      throw new Error(`Registration failed: ${response.statusText}`)
+      const error = new Error(data.message || data.detail || `Registration failed: ${response.statusText}`)
+      error.statusCode = response.status
+      error.details = data.details || null
+      throw error
     }
     
-    return await response.json()
+    return data
   } catch (error) {
     console.error("Registration error:", error)
     throw error
@@ -272,11 +282,16 @@ export async function getCurrentUser() {
       credentials: "include"
     })
     
+    const data = await response.json()
+    
     if (!response.ok) {
-      throw new Error(`Failed to fetch user: ${response.statusText}`)
+      const error = new Error(data.message || data.detail || `Failed to fetch user: ${response.statusText}`)
+      error.statusCode = response.status
+      error.details = data.details || null
+      throw error
     }
     
-    return await response.json()
+    return data
   } catch (error) {
     console.error("Current user fetch error:", error)
     throw error
@@ -294,11 +309,16 @@ export async function logoutUser() {
       credentials: "include"
     })
     
+    const data = await response.json()
+    
     if (!response.ok) {
-      throw new Error(`Logout failed: ${response.statusText}`)
+      const error = new Error(data.message || data.detail || `Logout failed: ${response.statusText}`)
+      error.statusCode = response.status
+      error.details = data.details || null
+      throw error
     }
     
-    return await response.json()
+    return data
   } catch (error) {
     console.error("Logout error:", error)
     throw error

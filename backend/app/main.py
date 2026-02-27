@@ -2,6 +2,7 @@ from fastapi import FastAPI, Depends, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
 from pathlib import Path
 import traceback
 
@@ -52,6 +53,29 @@ Base.metadata.create_all(bind=engine)
 # ============================================
 # ERROR HANDLING MIDDLEWARE
 # ============================================
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Handle validation errors with better messages"""
+    errors = exc.errors()
+    details = []
+    for error in errors:
+        field = ".".join(str(x) for x in error["loc"][1:])
+        details.append({
+            "field": field,
+            "message": error["msg"],
+            "type": error["type"]
+        })
+    
+    logger.error(f"Validation error: {details}")
+    return JSONResponse(
+        status_code=422,
+        content={
+            "error": "VALIDATION_ERROR",
+            "message": "Request validation failed",
+            "details": details
+        }
+    )
 
 @app.exception_handler(CognitiveException)
 async def cognitive_exception_handler(request: Request, exc: CognitiveException):

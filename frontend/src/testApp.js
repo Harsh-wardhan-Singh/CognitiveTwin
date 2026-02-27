@@ -1,6 +1,8 @@
 import { renderLogin } from './views/loginView.js'
+import { renderRegistration } from './views/registrationView.js'
 import { renderStudentHome } from './views/studentHomeView.js'
 import { renderTeacherClassSelect } from './views/teacherClassSelectView.js'
+import { checkExistingSession, logout as authLogout } from './services/auth.js'
 
 export let currentUser = null
 
@@ -11,7 +13,18 @@ export function setUser(user) {
 
 export function logout() {
   currentUser = null
+  authLogout()
   renderLogin()
+}
+
+export function goToLogin() {
+  currentUser = null
+  renderLogin()
+}
+
+export function goToRegistration() {
+  currentUser = null
+  renderRegistration()
 }
 
 /* ============================= */
@@ -68,4 +81,12 @@ function routeUser() {
 /* INITIAL LOAD */
 /* ============================= */
 
-renderLogin()
+// Check if user already has a valid backend session
+(async () => {
+  const existingSession = await checkExistingSession()
+  if (existingSession) {
+    setUser(existingSession)
+  } else {
+    renderLogin()
+  }
+})()

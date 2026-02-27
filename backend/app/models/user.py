@@ -1,5 +1,5 @@
-from sqlalchemy import Column, Integer, String, Enum, DateTime , Boolean
-from datetime import datetime , timezone
+from sqlalchemy import Column, Integer, String, Enum, DateTime, Boolean
+from datetime import datetime, timezone
 import enum
 from app.db.base import Base
 
@@ -17,6 +17,3 @@ class User(Base):
     full_name = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    email = Column(String, unique=True, index=True)
-    password_hash = Column(String, nullable=False)
-    role = Column(Enum(RoleEnum), nullable=False)
