@@ -163,10 +163,9 @@ def check_has_attempted_quiz(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Check if user has attempted a quiz
+    Check if user has completed the diagnostic quiz by checking the has_taken_diagnostic flag
     """
-    attempt_count = db.query(Attempt).filter(Attempt.user_id == current_user.id).count()
-    return {"has_attempted": attempt_count > 0}
+    return {"has_attempted": current_user.has_taken_diagnostic}
 
 
 @router.post("/diagnostic/complete")
@@ -207,6 +206,8 @@ def complete_diagnostic_quiz(
                 )
                 db.add(new_mastery)
         
+        # Mark that the student has taken the diagnostic
+        current_user.has_taken_diagnostic = True
         db.commit()
         return {"success": True, "message": "Diagnostic quiz results saved"}
     

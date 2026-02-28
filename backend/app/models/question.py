@@ -8,7 +8,7 @@ class Question(Base):
     topic = Column(String, index=True)
     concept = Column(String, index=True)
     difficulty = Column(Integer)
-    question_text = Column(Text, unique=True)
+    question_text = Column(Text)  # Removed unique constraint to allow similar questions
     correct_answer = Column(String)
     options = Column(Text, default="")  # Pipe-separated options
     question_type = Column(String, default="single")  # "single" or "multiple"

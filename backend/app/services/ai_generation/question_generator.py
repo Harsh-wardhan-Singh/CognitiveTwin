@@ -26,19 +26,28 @@ class QuestionGenerator:
             try:
                 raw = self.llm.generate_json(system_prompt, prompt)
 
-                # Ensure JSON parsing is explicit
-                parsed = json.loads(raw)
-
-                questions = validate_questions(parsed)
+                # Pass raw JSON string to validator (it expects str, not dict)
+                questions = validate_questions(raw)
                 return questions
 
-            except LLMTransportError:
-                # Transport errors should immediately bubble up
+            except LLMTransportError as e:
+                # Transport errors should be reported
+                print(f"      LLM Transport Error: {str(e)}")
                 raise
 
-            except (json.JSONDecodeError, ValueError) as e:
+            except json.JSONDecodeError as e:
                 # Schema or parsing issue — retry
                 last_error = e
+                print(f"      JSON Parse Error (attempt {attempt + 1}/{MAX_RETRIES}): {str(e)}")
+
+                if attempt < MAX_RETRIES - 1:
+                    time.sleep(RETRY_DELAY)
+                else:
+                    break
+
+            except Exception as e:
+                last_error = e
+                print(f"      Validation Error (attempt {attempt + 1}/{MAX_RETRIES}): {str(e)}")
 
                 if attempt < MAX_RETRIES - 1:
                     time.sleep(RETRY_DELAY)

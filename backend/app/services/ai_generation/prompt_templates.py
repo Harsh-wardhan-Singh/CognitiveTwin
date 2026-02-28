@@ -1,50 +1,49 @@
 def build_question_prompt(topic, difficulty, num_questions):
 
-    return f"""
-You are a probability exam question generator.
+    return f"""You are a probability exam question generator.
 
 Generate exactly {num_questions} MCQs.
 Topic: {topic}
 Difficulty: {difficulty}
 Audience: High school to early college.
 
-IMPORTANT:
-- Output MUST be valid JSON.
-- Do NOT include explanations outside JSON.
-- Do NOT include markdown.
-- Do NOT include commentary.
-- Start with {{ and end with }}.
+OUTPUT RULES - FOLLOW STRICTLY:
+- Output MUST be ONLY valid JSON, nothing else
+- NO markdown, NO explanations outside JSON, NO commentary
+- Start with {{ and end with }}
+- Ensure all quotes are properly escaped
+- Ensure all newlines in strings are escaped as \\n
+- No trailing commas
 
-JSON FORMAT:
-
+JSON FORMAT (strict):
 {{
   "questions": [
     {{
-      "question_id": "string",
-      "topic": "string",
+      "question_id": "Q1",
+      "topic": "{topic}",
       "difficulty": "easy|medium|hard",
       "question_type": "single|multiple",
       "multiple_selectable": true|false,
       "concept_tags": ["tag1", "tag2"],
-      "question_text": "string under 30 words",
+      "question_text": "text without newlines",
       "options": [
         {{
           "id": "A",
-          "text": "string",
-          "is_correct": true
+          "text": "option text",
+          "is_correct": true|false
         }}
       ],
-      "base_explanation": "2-4 line explanation"
+      "base_explanation": "short explanation"
     }}
   ]
 }}
 
-Rules:
-- 4–6 options per question
+Requirements:
+- 4-6 options per question
 - At least one correct option
 - Mix single and multiple answer questions
-- Avoid repeated numbers
-- Keep questions concise
+- question_text must be under 30 words
+- Escape all special characters properly
+- Format each string cleanly without rawNewlines
 
-Return ONLY JSON.
-"""
+Output ONLY the JSON object, nothing else."""

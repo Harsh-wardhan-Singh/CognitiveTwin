@@ -2,7 +2,7 @@ import { getTestsForClassroom } from '../services/testStore.js'
 import { currentUser, mountView } from '../testApp.js'
 import { renderStudentDashboard } from './studentDashboardView.js'
 import { renderQuiz, renderCustomTest } from '../student/quiz.js'
-import { fetchStudentClassrooms, joinClassroom as joinClassroomAPI } from '../services/api.js'
+import { fetchStudentClassrooms, joinClassroom as joinClassroomAPI, fetchStudentDashboard } from '../services/api.js'
 
 /* ============================= */
 /* MAIN STUDENT HOME */
@@ -148,11 +148,25 @@ function renderStudentClassroomView() {
 
     document
       .getElementById('viewDashboard')
-      .addEventListener('click', () => {
+      .addEventListener('click', async () => {
 
         if (!currentUser.hasTakenQuiz) {
           alert("Take a diagnostic first.")
           return
+        }
+
+        // Fetch fresh dashboard data from backend
+        try {
+          const dashboardData = await fetchStudentDashboard()
+          if (dashboardData) {
+            currentUser.data = {
+              mastery: dashboardData.mastery || currentUser.data?.mastery || {},
+              risk: dashboardData.risk_score || currentUser.data?.risk || 0
+            }
+          }
+        } catch (error) {
+          console.error("Failed to fetch dashboard data:", error)
+          // Fall back to cached data if available
         }
 
         renderStudentDashboard(currentUser.data)

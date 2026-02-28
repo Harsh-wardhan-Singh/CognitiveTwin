@@ -16,4 +16,5 @@ class User(Base):
     role = Column(Enum(RoleEnum), nullable=False)
     full_name = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
+    has_taken_diagnostic = Column(Boolean, default=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

@@ -2,8 +2,36 @@ import { createMasteryChart, updateMasteryChart } from '../components/charts/mas
 import { createRiskRing, updateRiskRing } from '../components/indicators/riskRing.js'
 import { renderStudentHome } from './studentHomeView.js'
 import { mountView, currentUser } from '../testApp.js'
+import { fetchStudentDashboard } from '../services/api.js'
 
-export function renderStudentDashboard(data) {
+export async function renderStudentDashboard(data) {
+  
+  // If data is not provided or empty, fetch from backend
+  if (!data || !data.mastery || Object.keys(data.mastery).length === 0) {
+    try {
+      const backendData = await fetchStudentDashboard()
+      if (backendData) {
+        data = {
+          mastery: backendData.mastery || {},
+          risk: backendData.risk_score || 0
+        }
+        currentUser.data = data
+      }
+    } catch (error) {
+      console.error("Failed to fetch dashboard data:", error)
+      // Use default empty state if fetch fails
+      data = {
+        mastery: {
+          Binomial: { value: 50 },
+          Poisson: { value: 50 },
+          Normal: { value: 50 },
+          Bayes: { value: 50 },
+          Conditional: { value: 50 }
+        },
+        risk: 0
+      }
+    }
+  }
 
   mountView((container) => {
 
@@ -50,11 +78,11 @@ export function renderStudentDashboard(data) {
     createMasteryChart('masteryChart')
 
     updateMasteryChart([
-      data.mastery.Binomial.value,
-      data.mastery.Poisson.value,
-      data.mastery.Normal.value,
-      data.mastery.Bayes.value,
-      data.mastery.Conditional.value
+      data.mastery.Binomial?.value || 50,
+      data.mastery.Poisson?.value || 50,
+      data.mastery.Normal?.value || 50,
+      data.mastery.Bayes?.value || 50,
+      data.mastery.Conditional?.value || 50
     ])
 
     /* ============================= */

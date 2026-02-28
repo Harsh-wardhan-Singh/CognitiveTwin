@@ -15,7 +15,8 @@ export async function checkExistingSession() {
       return {
         role: user.role,
         id: user.id,
-        email: user.email
+        email: user.email,
+        hasTakenQuiz: user.has_taken_diagnostic || false
       }
     }
   } catch (error) {
@@ -41,6 +42,7 @@ export async function register(email, password, role) {
         role: user.role,
         id: user.id,
         email: user.email,
+        hasTakenQuiz: user.has_taken_diagnostic || false,
         isBackendAuth: true
       }
     }
@@ -70,6 +72,7 @@ export async function login(email, password, role) {
         role: user.role,
         id: user.id,
         email: user.email,
+        hasTakenQuiz: user.has_taken_diagnostic || false,
         isBackendAuth: true
       }
     }
