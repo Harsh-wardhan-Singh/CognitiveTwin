@@ -75,8 +75,8 @@ def get_all_questions(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Get all questions grouped by concept (used for diagnostic test).
-    Returns questions organized by concept with options.
+    Get all questions grouped by topic (used for diagnostic test).
+    Returns questions organized by topic with options.
     """
     try:
         questions = db.query(Question).limit(limit).all()
@@ -84,16 +84,16 @@ def get_all_questions(
         if not questions:
             raise NotFoundError("Question", "any")
         
-        # Group by concept
-        questions_by_concept = {}
+        # Group by topic
+        questions_by_topic = {}
         for q in questions:
-            if q.concept not in questions_by_concept:
-                questions_by_concept[q.concept] = []
+            if q.topic not in questions_by_topic:
+                questions_by_topic[q.topic] = []
             
             options_list = q.options.split("||") if q.options else []
             correct_list = q.correct_answer.split("|") if q.correct_answer else []
             
-            questions_by_concept[q.concept].append({
+            questions_by_topic[q.topic].append({
                 "id": q.id,
                 "topic": q.topic,
                 "concept": q.concept,
@@ -106,7 +106,7 @@ def get_all_questions(
                 "correct_answer": q.correct_answer
             })
         
-        return questions_by_concept
+        return questions_by_topic
     except NotFoundError:
         raise
     except Exception as e:

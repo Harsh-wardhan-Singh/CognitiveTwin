@@ -289,7 +289,8 @@ export async function renderCustomTest(test) {
     }
 
     customQuestions = []
-    for (let i = 0; i < test.numQuestions && i < topicQuestions.length; i++) {
+    for (let i = 0; i < test.numQuestions; i++) {
+      if (topicQuestions.length === 0) break
       const randomIndex = Math.floor(Math.random() * topicQuestions.length)
       customQuestions.push(topicQuestions[randomIndex])
     }
